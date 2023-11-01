@@ -42,6 +42,7 @@ pub enum TokenType {
     WHILE,
 }
 
+#[derive(Clone)]
 pub struct Token {
     pub ty: TokenType,
     pub lexeme: Vec<u8>,
@@ -99,12 +100,10 @@ impl Default for Scanner {
 impl Scanner {
     fn scan_tokens(&mut self, input: String) {
         self.source = input.into_bytes();
-
         while !self.done() {
             self.start = self.current;
             self.scan_token();
         }
-
         match self.err {
             Some(_) => {}
             None => self.tokens.push(Token {
@@ -116,10 +115,8 @@ impl Scanner {
             }),
         }
     }
-
     fn scan_token(&mut self) {
         let c = self.advance();
-
         match c {
             '(' => self.add_token(TokenType::LeftParen),
             ')' => self.add_token(TokenType::RightParen),
@@ -194,5 +191,61 @@ impl Scanner {
                 }
             }
         }
+    }
+    fn string(&mut self) {
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.line += 1
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            self.err = Some(Error {
+                what: "Unterminated string".to_string(),
+                line: self.line,
+                col: self.col,
+            })
+        }
+
+        assert!(self.peek() == '"');
+
+        self.advance();
+
+        self.add_token_literal(
+            TokenType::String,
+            Some(Literal::Str(
+                String::from_utf8(self.source[self.start + 1..self.current - 1].to_vec()).unwrap(),
+            )),
+        )
+    }
+    fn advance(&mut self) -> char {
+        self.current += 1;
+        self.col += 1;
+        char::from(self.source[selc.current - 1])
+    }
+    fn add_token(&mut self, token_type: TokenType) {
+        self.add_token_literal(token_type, None)
+    }
+    fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
+        let text = source[self.start..self.current].to_vec();
+
+        self.tokens.push(Token {
+            ty: token_type,
+            lexeme: text,
+            literal,
+            line: self.line,
+            col: self.col,
+        })
+    }
+    fn peek(&self) -> char {
+        if self.is_at_end() {
+            '\0'
+        } else {
+            char::from(self.source[self.current])
+        }
+    }
+    fn is_at_end(&self) -> bool {
+        self.current >= self.source.len()
     }
 }
