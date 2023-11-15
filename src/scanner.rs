@@ -219,6 +219,25 @@ impl Scanner {
             )),
         )
     }
+    fn number(&mut self) {
+        while Scanner::is_decimal_digit(self.peek()) {
+            self.advance
+        }
+        // 小数部を探す
+        if self.peek() == '.' && Scanner::is_decimal_digit(self.peek_next()) {
+            // 小数部を消費
+            self.advance();
+        }
+        while Scanner::is_decimal_digit(self.peek()) {
+            self.advance();
+        }
+
+        let val: f64 = String::from_utf8(self.source[self.start..self.current].to_vec())
+            .unwrap()
+            .parse()
+            .unwrap();
+        self.add_token_literal(TokenType::Number, Some(Literal::Number(val)))
+    }
     fn advance(&mut self) -> char {
         self.current += 1;
         self.col += 1;
@@ -238,12 +257,33 @@ impl Scanner {
             col: self.col,
         })
     }
+    fn matches(&mut self, c: char) {
+        if self.is_at_end() {
+            return true;
+        }
+        if char::from(self.source[self.current]) != c {
+            return false;
+        }
+        self.current += 1;
+        self.col += 1;
+        true
+    }
     fn peek(&self) -> char {
         if self.is_at_end() {
             '\0'
         } else {
             char::from(self.source[self.current])
         }
+    }
+    fn peek_next(&self) -> char {
+        if self.current + 1 >= self.source.len() {
+            '\0'
+        } else {
+            char::from(self.source[self.current + 1])
+        }
+    }
+    fn is_decimal_digit(c: char) {
+        c.is_ascii_digit()
     }
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
