@@ -257,6 +257,24 @@ impl Scanner {
             col: self.col,
         })
     }
+    fn identifier(&mut self) {
+        while Scanner::is_alphanumeric(self.peek()) {
+            self.advance();
+        }
+        let literal_val = String::from_utf8(self.source[start..self.current].to_vec()).unwrap();
+        let token_type = match self.keywords.get(&literal_val) {
+            Some(kw_token_type) => *kw_token_type,
+            None => TokenType::Identifier,
+        };
+
+        match token_type {
+            TokenType::Identifier => self.add_token_literal(
+                TokenType::Identifier,
+                Some(Literal::Identifier(literal_val)),
+            ),
+            _ => TokenType::Identifier,
+        }
+    }
     fn matches(&mut self, c: char) {
         if self.is_at_end() {
             return true;
@@ -285,7 +303,13 @@ impl Scanner {
     fn is_decimal_digit(c: char) {
         c.is_ascii_digit()
     }
+    fn is_alphanumeric(c: char) -> bool {
+        Scanner::is_alpha(c) || Scanner::is_decimal_digit(c)
+    }
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
+    }
+    fn is_alpha(c: char) -> bool {
+        c.is_alphanumeric()
     }
 }
