@@ -2,20 +2,20 @@
 pub enum Expr {
     Literal(Literal),
     This(SourceLocation),
-    Unary(UnaryOperand, Box<Expr>),
-    Binary(Box<Expr>, BinaryOperand, Box<Expr>),
+    Unary(UnaryOp, Box<Expr>),
+    Binary(Box<Expr>, BinaryOp, Box<Expr>),
     Call(Box<Expr>, SourceLocation, Vec<Expr>),
     Get(Box<Expr>, Symbol),
     Grouping(Box<Expr>),
     Variable(Symbol),
     Assign(Symbol, Box<Expr>),
-    Logical(Box<Expr>, LogicalOperand, Box<Expr>),
+    Logical(Box<Expr>, LogicalOp, Box<Expr>),
     Set(Box<Expr>, Symbol, Box<Expr>),
     Super(SourceLocation, Symbol),
     List(Vec<Expr>),
     Subscript {
         value: Box<Expr>,
-        slice: slice<Box>,
+        slice: Box<Expr>,
         source_location: SourceLocation,
     },
     SetItem {
@@ -34,7 +34,7 @@ pub struct SourceLocation {
 }
 
 #[derive(Debug, Clone)]
-pub enum LogicalOperand {
+pub enum LogicalOp {
     Or,
     And,
 }
@@ -46,24 +46,71 @@ pub struct Symbol {
     pub col: i64,
 }
 
+#[derive(Debug, Clone)]
+pub struct FunDecl {
+    pub name: Symbol,
+    pub params: Vec<Symbol>,
+    pub body: Vec<Stmt>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LambdaDecl {
+    pub params: Vec<Symbol>,
+    pub body: Vec<Stmt>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ClassDecl {
+    pub name: Symbol,
+    pub superclass: Option<Symbol>,
+    pub methods: Vec<FunDecl>,
+}
+
+#[derive(Debug, Clone)]
+pub enum Stmt {
+    Expr(Expr),
+    FunDecl(FunDecl),
+    ClassDecl(ClassDecl),
+    If(Expr, Box<Stmt>, Option<Box<Stmt>>),
+    Print(Expr),
+    VarDecl(Symbol, Option<Expr>),
+    Block(Vec<Stmt>),
+    Return(SourceLocation, Option<Expr>),
+    While(Expr, Box<Stmt>),
+}
+
 #[derive(Debug, Copy, Clone)]
-pub struct BinaryOperand {
-    pub ty: BinaryOperandType,
+pub enum UnaryOpTy {
+    Minus,
+    Bang,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct UnaryOp {
+    pub ty: UnaryOpTy,
     pub line: usize,
     pub col: i64,
 }
+
 #[derive(Debug, Copy, Clone)]
-pub enum BinaryOperandType {
+pub enum BinaryOpTy {
     EqualEqual,
     NotEqual,
-    less,
+    Less,
     LessEqual,
     Greater,
     GreaterEqual,
-    Plust,
+    Plus,
     Minus,
     Star,
     Slash,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct BinaryOp {
+    pub ty: BinaryOpTy,
+    pub line: usize,
+    pub col: i64,
 }
 
 #[derive(Debug, Clone)]
